@@ -1,0 +1,128 @@
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.util.LinkedList;
+import java.util.Random;
+
+public class SnakeGame extends JPanel implements ActionListener {
+    private final int WIDTH = 600;
+    private final int HEIGHT = 400;
+    private final int DOT_SIZE = 10;
+    private final int ALL_DOTS = (WIDTH * HEIGHT) / (DOT_SIZE * DOT_SIZE);
+    private final LinkedList<Point> snake = new LinkedList<>();
+    private Point food;
+    private char direction = 'R';
+    private boolean running = false;
+
+    public SnakeGame() {
+        setBackground(Color.BLACK);
+        setFocusable(true);
+        setPreferredSize(new Dimension(WIDTH, HEIGHT));
+        addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                switch (e.getKeyCode()) {
+                    case KeyEvent.VK_UP:
+                        if (direction != 'D') direction = 'U';
+                        break;
+                    case KeyEvent.VK_DOWN:
+                        if (direction != 'U') direction = 'D';
+                        break;
+                    case KeyEvent.VK_LEFT:
+                        if (direction != 'R') direction = 'L';
+                        break;
+                    case KeyEvent.VK_RIGHT:
+                        if (direction != 'L') direction = 'R';
+                        break;
+                }
+            }
+        });
+        initGame();
+    }
+
+    private void initGame() {
+        running = true;
+        snake.clear();
+        snake.add(new Point(5, 5));
+        spawnFood();
+        Timer timer = new Timer(100, this);
+        timer.start();
+    }
+
+    private void spawnFood() {
+        Random rand = new Random();
+        food = new Point(rand.nextInt(WIDTH / DOT_SIZE), rand.nextInt(HEIGHT / DOT_SIZE));
+        while (snake.contains(food)) {
+            food = new Point(rand.nextInt(WIDTH / DOT_SIZE), rand.nextInt(HEIGHT / DOT_SIZE));
+        }
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        if (running) {
+            g.setColor(Color.RED);
+            g.fillRect(food.x * DOT_SIZE, food.y * DOT_SIZE, DOT_SIZE, DOT_SIZE);
+            g.setColor(Color.GREEN);
+            for (Point p : snake) {
+                g.fillRect(p.x * DOT_SIZE, p.y * DOT_SIZE, DOT_SIZE, DOT_SIZE);
+            }
+        } else {
+            showGameOver(g);
+        }
+        Toolkit.getDefaultToolkit().sync();
+    }
+
+    private void showGameOver(Graphics g) {
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.BOLD, 20));
+        g.drawString("Game Over!", WIDTH / 2 - 50, HEIGHT / 2);
+    }
+
+    private void move() {
+        Point head = snake.getFirst();
+        Point newHead = new Point(head);
+
+        switch (direction) {
+            case 'U': newHead.y--; break;
+            case 'D': newHead.y++; break;
+            case 'L': newHead.x--; break;
+            case 'R': newHead.x++; break;
+        }
+
+        if (newHead.equals(food)) {
+            snake.addFirst(newHead);
+            spawnFood();
+        } else {
+            snake.addFirst(newHead);
+            snake.removeLast();
+        }
+
+        // Check for collisions
+        if (newHead.x < 0 || newHead.x >= WIDTH / DOT_SIZE || newHead.y < 0 || newHead.y >= HEIGHT / DOT_SIZE || snake.subList(1, snake.size()).contains(newHead)) {
+            running = false;
+        }
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (running) {
+            move();
+        }
+        repaint();
+    }
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Snake Game");
+        SnakeGame game = new SnakeGame();
+        frame.add(game);
+        frame.pack();
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+}
